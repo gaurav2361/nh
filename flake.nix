@@ -1,10 +1,14 @@
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+  };
 
   outputs =
     {
       self,
       nixpkgs,
+      rust-overlay,
     }:
     let
       forAllSystems =
@@ -14,42 +18,27 @@
           "aarch64-linux"
           "x86_64-darwin"
           "aarch64-darwin"
-        ] (system: function nixpkgs.legacyPackages.${system});
+        ] (system: function (import nixpkgs {
+          inherit system;
+          overlays = [ (import rust-overlay) ];
+        }));
 
       rev = self.shortRev or self.dirtyShortRev or "dirty";
     in
     {
-      overlays.default = final: _: { nh = final.callPackage ./package.nix { inherit rev; }; };
-
       packages = forAllSystems (pkgs: {
-        nh = pkgs.callPackage ./package.nix { inherit rev; };
+        nh = pkgs.callPackage ./package.nix {
+          inherit rev;
+          rustPlatform = pkgs.makeRustPlatform {
+            cargo = pkgs.rust-bin.stable.latest.minimal;
+            rustc = pkgs.rust-bin.stable.latest.minimal;
+          };
+        };
         default = self.packages.${pkgs.stdenv.hostPlatform.system}.nh;
       });
-
-      checks = self.packages // self.devShells;
 
       devShells = forAllSystems (pkgs: {
         default = import ./shell.nix { inherit pkgs; };
       });
-
-      formatter = forAllSystems (
-        pkgs:
-        # Provides the default formatter for 'nix fmt', which will format the
-        # entire tree with Nixfmt. Treefmt is *wildly* overkill for this project
-        # so a simple bash script will suffice.
-        pkgs.writeShellApplication {
-          name = "nix3-fmt-wrapper";
-
-          runtimeInputs = [
-            pkgs.nixfmt-rfc-style
-            pkgs.fd
-          ];
-
-          text = ''
-            # Find Nix files in the tree and format them with Alejandra
-            fd "$@" -t f -e nix -x nixfmt -q '{}'
-          '';
-        }
-      );
     };
 }

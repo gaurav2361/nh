@@ -1,7 +1,6 @@
 use std::{
   collections::HashSet,
-  fmt,
-  io,
+  fmt, io,
   os::unix::process::CommandExt,
   path::Path,
   process::{Command as StdCommand, Stdio},
@@ -532,10 +531,35 @@ pub fn print_dix_diff(
   Ok(())
 }
 
+/// Formats bytes into a human-readable string.
+pub fn bytes_to_human(bytes: u64) -> String {
+  let kb = bytes as f64 / 1024.0;
+  let mb = kb / 1024.0;
+  let gb = mb / 1024.0;
+
+  if gb >= 1.0 {
+    format!("{:.2} GB", gb)
+  } else if mb >= 1.0 {
+    format!("{:.2} MB", mb)
+  } else if kb >= 1.0 {
+    format!("{:.2} KB", kb)
+  } else {
+    format!("{} bytes", bytes)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::installable::Installable;
+
+  #[test]
+  fn test_bytes_to_human() {
+    assert_eq!(bytes_to_human(500), "500 bytes");
+    assert_eq!(bytes_to_human(1024), "1.00 KB");
+    assert_eq!(bytes_to_human(1024 * 1024), "1.00 MB");
+    assert_eq!(bytes_to_human(1024 * 1024 * 1024), "1.00 GB");
+  }
 
   #[test]
   fn test_get_build_image_variants_expression() {
@@ -552,7 +576,7 @@ mod tests {
 }
       "
       .to_string(),
-      attribute:  vec![],
+      attribute: vec![],
     };
 
     let result = get_build_image_variants(&installable, "test");
@@ -587,7 +611,7 @@ mod tests {
       .expect("Failed to write test file");
 
     let installable = Installable::File {
-      path:      test_file.path().to_path_buf(),
+      path: test_file.path().to_path_buf(),
       attribute: vec![],
     };
 

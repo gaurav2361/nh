@@ -1,4 +1,5 @@
 pub mod args;
+pub mod darwin;
 
 use std::{
   collections::{BTreeMap, HashMap},
@@ -22,6 +23,7 @@ use nix::{
 use regex::Regex;
 use tracing::{Level, debug, info, instrument, span, warn};
 use yansi::{Color, Paint};
+use nh_core::ui::*;
 
 // Nix impl:
 // https://github.com/NixOS/nix/blob/master/src/nix-collect-garbage/nix-collect-garbage.cc
@@ -44,9 +46,9 @@ static GENERATION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Generation {
-  number:        u32,
+  number: u32,
   last_modified: SystemTime,
-  path:          PathBuf,
+  path: PathBuf,
 }
 
 type ToBeRemoved = bool;
@@ -182,6 +184,7 @@ impl args::CleanMode {
 
         args
       },
+      Self::Darwin(args) => return darwin::run_clean_darwin(args, elevate),
     };
 
     // Use mutation to raise errors as they come
@@ -230,16 +233,14 @@ impl args::CleanMode {
           AtFlags::AT_SYMLINK_NOFOLLOW,
         ) {
           Ok(()) => true,
-          Err(errno) => {
-            match errno {
-              Errno::EACCES | Errno::ENOENT => false,
-              _ => {
-                bail!(
-                  eyre!("Checking access for gcroot {:?}, unknown error", dst)
-                    .wrap_err(errno)
-                )
-              },
-            }
+          Err(errno) => match errno {
+            Errno::EACCES | Errno::ENOENT => false,
+            _ => {
+              bail!(
+                eyre!("Checking access for gcroot {:?}, unknown error", dst)
+                  .wrap_err(errno)
+              )
+            },
           },
         } {
           let dur = now.duration_since(
@@ -268,81 +269,126 @@ impl args::CleanMode {
 
     // Present the user the information about the paths to clean
     println!();
-    println!("{}", Paint::new("Welcome to nh clean").bold());
     println!(
-      "Keeping {} generation(s)",
-      Paint::new(args.keep).fg(Color::Green)
+      "{} {} {}",
+      Paint::new(ICON_ARROW).fg(PURPLE).bold(),
+      Paint::new("nh clean").bold(),
+      if args.dry {
+        Paint::new("(dry-run)").fg(YELLOW).to_string()
+      } else {
+        "".to_string()
+      }
     );
     println!(
-      "Keeping paths newer than {}",
-      Paint::new(args.keep_since).fg(Color::Green)
+      "  {}",
+      Paint::new("Clean your Nix system and reclaim space.").dim()
     );
+
     println!();
-    println!("legend:");
     println!(
-      "{}: path regular expression to be matched",
-      Paint::new("RE").fg(Color::Magenta)
+      "  {} Keeping {} generation(s)",
+      Paint::new("•").fg(BLUE),
+      Paint::new(args.keep).fg(GREEN).bold()
     );
-    println!("{}: path to be kept", Paint::new("OK").fg(Color::Green));
-    println!("{}: path to be removed", Paint::new("DEL").fg(Color::Red));
+    println!(
+      "  {} Keeping paths newer than {}",
+      Paint::new("•").fg(BLUE),
+      Paint::new(args.keep_since).fg(GREEN).bold()
+    );
+
     println!();
+    println!("  {}", Paint::new("Legend:").dim());
+    println!(
+      "    {} path to be removed",
+      Paint::new("DEL").fg(RED).bold()
+    );
+    println!(
+      "    {} path to be kept",
+      Paint::new("OK ").fg(GREEN).bold()
+    );
+
     if !gcroots_tagged.is_empty() {
+      println!();
       println!(
-        "{}",
+        "{} {}",
+        Paint::new(ICON_ARROW).fg(PURPLE).bold(),
         Paint::new("gcroots (matching the following regex patterns)")
-          .fg(Color::Blue)
           .bold()
       );
       for re in regexes {
-        println!("- {}  {}", Paint::new("RE").fg(Color::Magenta), re.as_str());
+        println!(
+          "  {} {}",
+          Paint::new("RE").fg(CYAN).dim(),
+          Paint::new(re.as_str()).dim()
+        );
       }
       for (path, tbr) in &gcroots_tagged {
         if *tbr {
           println!(
-            "- {} {}",
-            Paint::new("DEL").fg(Color::Red),
+            "  {} {}",
+            Paint::new("DEL").fg(RED).bold(),
             path.to_string_lossy()
           );
         } else {
           println!(
-            "- {} {}",
-            Paint::new("OK ").fg(Color::Green),
+            "  {} {}",
+            Paint::new("OK ").fg(GREEN).dim(),
             path.to_string_lossy()
           );
         }
       }
-      println!();
-    }
-    for (profile, generations_tagged) in &profiles_tagged {
-      println!(
-        "{}",
-        Paint::new(profile.to_string_lossy()).fg(Color::Blue).bold()
-      );
-      for (generation, tbr) in generations_tagged.iter().rev() {
-        if *tbr {
-          println!(
-            "- {} {}",
-            Paint::new("DEL").fg(Color::Red),
-            generation.path.to_string_lossy()
-          );
-        } else {
-          println!(
-            "- {} {}",
-            Paint::new("OK ").fg(Color::Green),
-            generation.path.to_string_lossy()
-          );
-        }
-      }
-      println!();
     }
 
+    for (profile, generations_tagged) in &profiles_tagged {
+      println!();
+      println!(
+        "{} {}",
+        Paint::new(ICON_ARROW).fg(PURPLE).bold(),
+        Paint::new(profile.to_string_lossy()).bold()
+      );
+      if generations_tagged.is_empty() {
+        println!(
+          "  {} {}",
+          Paint::new(ICON_SUCCESS).fg(GREEN),
+          Paint::new("Nothing to clean").dim()
+        );
+      } else {
+        for (generation, tbr) in generations_tagged.iter().rev() {
+          if *tbr {
+            println!(
+              "  {} generation {} ({})",
+              Paint::new("DEL").fg(RED).bold(),
+              Paint::new(generation.number).bold(),
+              generation.path.to_string_lossy()
+            );
+          } else {
+            println!(
+              "  {} generation {} ({})",
+              Paint::new("OK ").fg(GREEN).dim(),
+              generation.number,
+              generation.path.to_string_lossy()
+            );
+          }
+        }
+      }
+    }
+
+    println!();
+
     // Clean the paths
-    if args.ask
-      && !Confirm::new("Confirm the cleanup plan?")
+    if args.ask {
+      if !Confirm::new("Confirm the cleanup plan?")
         .with_default(false)
         .prompt()?
-    {
-      bail!("User rejected the cleanup plan");
+      {
+        bail!("User rejected the cleanup plan");
+      }
+    } else if args.dry {
+      println!(
+        "{} {}",
+        Paint::new(ICON_DRY_RUN).fg(YELLOW).bold(),
+        Paint::new("Dry run complete. No changes made.").bold()
+      );
     }
 
     if !args.dry {
@@ -359,9 +405,20 @@ impl args::CleanMode {
           }
         }
       }
+      
+      println!(
+        "\n{} {}",
+        Paint::new(ICON_SUCCESS).fg(GREEN).bold(),
+        Paint::new("Nix generations cleanup complete!").bold()
+      );
     }
 
     if !args.no_gc {
+      println!(
+        "{} {}",
+        Paint::new(ICON_ARROW).fg(PURPLE).bold(),
+        Paint::new("Performing garbage collection on the nix store").bold()
+      );
       let mut gc_args = vec!["store", "gc"];
       if let Some(ref max) = args.max {
         gc_args.push("--max");
@@ -370,20 +427,33 @@ impl args::CleanMode {
       Command::new("nix")
         .args(gc_args)
         .dry(args.dry)
-        .message("Performing garbage collection on the nix store")
         .show_output(true)
         .with_required_env()
         .run()?;
+      println!(
+        "  {} {}",
+        Paint::new(ICON_SUCCESS).fg(GREEN).bold(),
+        Paint::new("Garbage collection complete").dim()
+      );
     }
 
     if args.optimise {
+      println!(
+        "\n{} {}",
+        Paint::new(ICON_ARROW).fg(PURPLE).bold(),
+        Paint::new("Optimising the nix store").bold()
+      );
       Command::new("nix-store")
         .args(["--optimise"])
         .dry(args.dry)
-        .message("Optimising the nix store")
         .show_output(true)
         .with_required_env()
         .run()?;
+      println!(
+        "  {} {}",
+        Paint::new(ICON_SUCCESS).fg(GREEN).bold(),
+        Paint::new("Nix store optimisation complete").dim()
+      );
     }
 
     Ok(())
@@ -508,8 +578,14 @@ fn cleanable_generations(
 }
 
 fn remove_path_nofail(path: &Path) {
-  info!("Removing {}", path.to_string_lossy());
+  debug!("Removing {}", path.to_string_lossy());
   if let Err(err) = std::fs::remove_file(path) {
     warn!(?path, ?err, "Failed to remove path");
+  } else {
+    println!(
+      "  {} {}",
+      Paint::new(ICON_SUCCESS).fg(GREEN).bold(),
+      path.to_string_lossy()
+    );
   }
 }

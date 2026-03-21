@@ -18,7 +18,33 @@ pub enum CleanMode {
   User(CleanArgs),
   /// Clean a specific profile
   Profile(CleanProfileArgs),
+  /// macOS deep cleaning (experimental, ported from Mole)
+  Darwin(DarwinCleanArgs),
 }
+
+#[derive(Args, Clone, Debug)]
+pub struct DarwinCleanArgs {
+  /// Only print actions, without performing them
+  #[arg(long, short = 'n')]
+  pub dry: bool,
+
+  /// Ask for confirmation
+  #[arg(long, short)]
+  pub ask: bool,
+
+  /// Categories to clean (comma-separated: system,user,dev,apps,browsers,optimize,purge,nix). Default: all
+  #[arg(long, short, value_delimiter = ',', default_value = "system,user,dev,apps,browsers,optimize,purge,nix")]
+  pub categories: Vec<String>,
+
+  #[arg(long, short, default_value = "1")]
+  /// At least keep this number of generations (for Nix cleanup)
+  pub keep: u32,
+
+  #[arg(long, short = 'K', default_value = "0h")]
+  /// At least keep gcroots and generations in this time range since now (for Nix cleanup)
+  pub keep_since: humantime::Duration,
+  }
+
 
 #[derive(Args, Clone, Debug)]
 pub struct CleanArgs {

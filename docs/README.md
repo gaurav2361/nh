@@ -388,6 +388,12 @@ the common variables that you may encounter or choose to employ are as follows:
   `FLAKE` and emit a warning recommending migration to `NH_FLAKE`. `FLAKE` will
   be removed in the future versions of NH.
 
+## Documentation
+
+- [Commands Reference](./commands.md) - Common `nh` commands and usage.
+- [Development Guide](./development.md) - Building and developing `nh`.
+- [Remote Build](./remote-build.md) - Information about remote builds.
+
 ## Frequently Asked Questions (FAQ)
 
 **Q**: Does NH wrap the CLIs that I typically use?

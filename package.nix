@@ -6,6 +6,8 @@
   installShellFiles,
   versionCheckHook,
   sudo,
+  libiconv,
+  darwin,
   use-nom ? true,
   nix-output-monitor ? null,
   rev ? "dirty",
@@ -39,6 +41,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
     makeBinaryWrapper
   ];
 
+  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
+    libiconv
+    darwin.apple_sdk.frameworks.SystemConfiguration
+  ];
+
   cargoLock.lockFile = ./Cargo.lock;
 
   postInstall =
@@ -57,7 +64,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       # actually load *all* shell completions we generate with 'xtask dist'.
       # Elvish, for example isn't supported. So we have to be very explicit
       # about what we're installing, or this will fail.
-      installShellCompletion --cmd ${finalAttrs.meta.mainProgram} ./comp/*.{bash,fish,zsh,nu}
+      installShellCompletion --cmd ${finalAttrs.meta.mainProgram} ./comp/*.{bash,fish,zsh}
       installManPage ./man/nh.1
     ''
     + ''
