@@ -2,16 +2,17 @@
   pkgs ? import <nixpkgs> { },
 }:
 with pkgs;
+let
+  toolchain = (rust-bin.stable.latest.default.override {
+    extensions = [ "rust-src" "rust-analyzer" ];
+  });
+in
 mkShell {
   strictDeps = true;
 
   nativeBuildInputs = [
-    cargo
-    rustc
+    toolchain
 
-    (rustfmt.override { asNightly = true; })
-    rust-analyzer-unwrapped
-    clippy
     taplo
 
     lldb
@@ -29,6 +30,6 @@ mkShell {
   env = {
     NH_NOM = "1";
     NH_LOG = "nh=trace";
-    RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
+    RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
   };
 }
