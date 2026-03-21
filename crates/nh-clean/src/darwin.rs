@@ -20,8 +20,8 @@ static IGNORE_DIRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     s.insert("System");
     s.insert("Volumes");
     s.insert("dev");
-    s.insert("bin");
-    s.insert("sbin");
+    // s.insert("bin");
+    // s.insert("sbin");
     s.insert("usr");
     s.insert("etc");
     s.insert("var");
@@ -46,6 +46,9 @@ static TARGET_DIRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     s.insert("__pycache__");
     s.insert(".next");
     s.insert(".turbo");
+    s.insert("bin");
+    s.insert("pkg");
+    s.insert("can");
     s
 });
 
