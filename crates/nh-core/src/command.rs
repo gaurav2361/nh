@@ -252,7 +252,7 @@ impl ElevationStrategy {
 
     for strategy in STRATEGIES {
       if let Ok(path) = which(strategy) {
-        debug!(?path, "{strategy} path found");
+        // debug!(?path, "{strategy} path found");
         return Ok(path);
       }
     }
@@ -432,22 +432,22 @@ impl Command {
       }
     }
 
-    debug!(
-      "Configured envs: {}",
-      self
-        .env_vars
-        .iter()
-        .map(|(key, action)| {
-          match action {
-            EnvAction::Set(value) => format!("{key}={value}"),
-            EnvAction::Preserve => format!("{key}=<preserved>"),
-            EnvAction::Remove => format!("{key}=<removed>"),
-          }
-        })
-        .collect::<Vec<_>>()
-        .join(", ")
-    );
-
+//     debug!(
+//       "Configured envs: {}",
+//       self
+//         .env_vars
+//         .iter()
+//         .map(|(key, action)| {
+//           match action {
+//             EnvAction::Set(value) => format!("{key}={value}"),
+//             EnvAction::Preserve => format!("{key}=<preserved>"),
+//             EnvAction::Remove => format!("{key}=<removed>"),
+//           }
+//         })
+//         .collect::<Vec<_>>()
+//         .join(", ")
+//     );
+// 
     self
   }
 
@@ -860,7 +860,7 @@ impl Build {
           | Exec::cmd("nom").args(&["--json"])
       }
       .stdout(Redirection::None);
-      debug!(?pipeline);
+      // debug!(?pipeline);
 
       // Use `popen()` to get access to individual processes so we can check
       // Nix's exit status, not nom's. The pipeline's `join()` only returns

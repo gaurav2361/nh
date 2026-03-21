@@ -117,14 +117,14 @@ pub fn normalize_version_string(version: &str) -> String {
   if let Some(captures) = VERSION_REGEX.captures(version) {
     let major = captures.get(1).map_or_else(
       || {
-        debug!("Failed to extract major version from '{version}'",);
+        // debug!("Failed to extract major version from '{version}'",);
         version
       },
       |m| m.as_str(),
     );
     let minor = captures.get(2).map_or_else(
       || {
-        debug!("Failed to extract minor version from '{version}'");
+        // debug!("Failed to extract minor version from '{version}'");
         version
       },
       |m| m.as_str(),
@@ -133,7 +133,7 @@ pub fn normalize_version_string(version: &str) -> String {
 
     let normalized = format!("{major}.{minor}.{patch}");
     if version != normalized {
-      debug!("Version normalized: '{version}' -> '{normalized}'");
+      // debug!("Version normalized: '{version}' -> '{normalized}'");
     }
 
     return normalized;
@@ -154,7 +154,7 @@ pub fn normalize_version_string(version: &str) -> String {
   };
 
   if version != normalized {
-    debug!("Version normalized: '{}' -> '{}'", version, normalized);
+    // debug!("Version normalized: '{}' -> '{}'", version, normalized);
   }
 
   normalized
@@ -350,7 +350,7 @@ pub fn get_missing_experimental_features(
 pub fn self_elevate(strategy: ElevationStrategy) -> ! {
   let mut cmd = Command::self_elevate_cmd(strategy)
     .expect("Failed to create self-elevation command");
-  debug!("{:?}", cmd);
+  // debug!("{:?}", cmd);
 
   let err = cmd.exec();
   panic!("{err}");

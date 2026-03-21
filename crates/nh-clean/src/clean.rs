@@ -131,13 +131,13 @@ impl args::CleanMode {
         // special at 501+ https://en.wikipedia.org/wiki/User_identifier
         let uid_min = if cfg!(target_os = "macos") { 501 } else { 1000 };
         let uid_max = uid_min + 100;
-        debug!("Scanning XDG profiles for users 0, {uid_min}-{uid_max}");
+        // debug!("Scanning XDG profiles for users 0, {uid_min}-{uid_max}");
 
         // Check root user (uid 0)
         if let Some(user) =
           nix::unistd::User::from_uid(nix::unistd::Uid::from_raw(0))?
         {
-          debug!(?user, "Adding XDG profiles for root user");
+          // debug!(?user, "Adding XDG profiles for root user");
           let user_profiles_path = user.dir.join(".local/state/nix/profiles");
           if user_profiles_path.is_dir() {
             profiles.extend(profiles_in_dir(user_profiles_path));
@@ -149,7 +149,7 @@ impl args::CleanMode {
           if let Some(user) =
             nix::unistd::User::from_uid(nix::unistd::Uid::from_raw(uid))?
           {
-            debug!(?user, "Adding XDG profiles for user");
+            // debug!(?user, "Adding XDG profiles for user");
             let user_profiles_path = user.dir.join(".local/state/nix/profiles");
             if user_profiles_path.is_dir() {
               profiles.extend(profiles_in_dir(user_profiles_path));
@@ -208,13 +208,13 @@ impl args::CleanMode {
         let dst = src.read_link().wrap_err("Reading symlink destination")?;
         let span = span!(Level::TRACE, "gcroot detection", ?dst);
         let _entered = span.enter();
-        debug!(?src);
+        // debug!(?src);
 
         if !regexes
           .iter()
           .any(|next| next.is_match(&dst.to_string_lossy()))
         {
-          debug!("dst doesn't match any gcroot regex, skipping");
+          // debug!("dst doesn't match any gcroot regex, skipping");
           continue;
         }
 
@@ -249,7 +249,7 @@ impl args::CleanMode {
               .wrap_err("Reading gcroot metadata")?
               .modified()?,
           );
-          debug!(?dur);
+          // debug!(?dur);
           match dur {
             Err(err) => {
               warn!(?err, ?now, "Failed to compare time!");
@@ -262,7 +262,7 @@ impl args::CleanMode {
             },
           }
         } else {
-          debug!("dst doesn't exist or is not writable, skipping");
+          // debug!("dst doesn't exist or is not writable, skipping");
         }
       }
     }
@@ -573,12 +573,12 @@ fn cleanable_generations(
     *tbr = false;
   }
 
-  debug!("{:#?}", result);
+  // debug!("{:#?}", result);
   Ok(result)
 }
 
 fn remove_path_nofail(path: &Path) {
-  debug!("Removing {}", path.to_string_lossy());
+  // debug!("Removing {}", path.to_string_lossy());
   if let Err(err) = std::fs::remove_file(path) {
     warn!(?path, ?err, "Failed to remove path");
   } else {
