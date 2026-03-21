@@ -186,7 +186,7 @@ fn clean_containers(args: &DarwinCleanArgs) -> Result<u64> {
 
     if docker_exists {
         if args.dry {
-            println!("  {} Would run docker system prune -af --volumes", Paint::new("DRY:").fg(Color::Yellow));
+            println!("  {} Would run docker system prune -af --volumes", Paint::new(ICON_DRY_RUN).fg(YELLOW).bold());
         } else {
             // Check if docker is running to avoid hanging
             let status = std::process::Command::new("docker")
@@ -330,7 +330,7 @@ fn run_optimize(args: &DarwinCleanArgs) -> Result<()> {
     // Rebuild Launch Services
     info!("Rebuilding launch services...");
     let _ = std::process::Command::new("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister")
-        .args(["-seed", "-r", "-f", "-domain", "local", "-domain", "system", "-domain", "user"])
+        .args(["-seed", "-r", "-f", "-domain", "local", "-domain", "system", "-domain", "user"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null())
         .status();
     println!("  {} Launch services rebuilt", Paint::new(ICON_SUCCESS).fg(GREEN).bold());
 
@@ -373,7 +373,7 @@ fn clean_nix(args: &DarwinCleanArgs) -> Result<()> {
         .arg("-d")
         .elevate(Some(ElevationStrategy::Auto))
         .message("Removing old Nix generations")
-        .show_output(true)
+        .show_output(false)
         .run()?;
 
     info!("Running nix-store --gc...");
@@ -381,15 +381,15 @@ fn clean_nix(args: &DarwinCleanArgs) -> Result<()> {
         .arg("--gc")
         .elevate(Some(ElevationStrategy::Auto))
         .message("Performing Nix store garbage collection")
-        .show_output(true)
+        .show_output(false)
         .run()?;
 
-    info!("Running nix-store --optimise...");
+    info!("Running nix-store --optimise... (this may take a while)");
     nh_core::command::Command::new("nix-store")
         .arg("--optimise")
         .elevate(Some(ElevationStrategy::Auto))
-        .message("Optimising the Nix store")
-        .show_output(true)
+        .message("Optimising the Nix store (this may take a while)")
+        .show_output(false)
         .run()?;
 
     println!("  {} Nix cleanup complete", Paint::new(ICON_SUCCESS).fg(GREEN).bold());
@@ -506,5 +506,5 @@ use nh_core::util::bytes_to_human;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+     // use super::*; 
 }

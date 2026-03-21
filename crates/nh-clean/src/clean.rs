@@ -21,8 +21,8 @@ use nix::{
   unistd::{AccessFlags, faccessat},
 };
 use regex::Regex;
-use tracing::{Level, debug, info, instrument, span, warn};
-use yansi::{Color, Paint};
+use tracing::{Level, instrument, span, warn};
+use yansi::Paint;
 use nh_core::ui::*;
 
 // Nix impl:
@@ -427,7 +427,7 @@ impl args::CleanMode {
       Command::new("nix")
         .args(gc_args)
         .dry(args.dry)
-        .show_output(true)
+        .show_output(false)
         .with_required_env()
         .run()?;
       println!(
@@ -446,7 +446,7 @@ impl args::CleanMode {
       Command::new("nix-store")
         .args(["--optimise"])
         .dry(args.dry)
-        .show_output(true)
+        .show_output(false)
         .with_required_env()
         .run()?;
       println!(

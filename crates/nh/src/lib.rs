@@ -41,8 +41,8 @@ pub fn main() -> Result<()> {
 
   // Set up logging
   crate::logging::setup_logging(args.verbosity)?;
-  tracing::debug!("{args:#?}");
-  tracing::debug!(%NH_VERSION, ?NH_REV);
+  // tracing::debug!("{args:#?}");
+  // tracing::debug!(%NH_VERSION, ?NH_REV);
 
   // Check Nix version upfront
   nh_core::checks::verify_nix_environment()?;
