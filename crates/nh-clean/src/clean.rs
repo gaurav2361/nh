@@ -15,6 +15,7 @@ use color_eyre::{
 };
 use inquire::Confirm;
 use nh_core::command::{Command, ElevationStrategy};
+use nh_core::ui::*;
 use nix::{
   errno::Errno,
   fcntl::AtFlags,
@@ -23,7 +24,6 @@ use nix::{
 use regex::Regex;
 use tracing::{Level, instrument, span, warn};
 use yansi::Paint;
-use nh_core::ui::*;
 
 // Nix impl:
 // https://github.com/NixOS/nix/blob/master/src/nix-collect-garbage/nix-collect-garbage.cc
@@ -302,18 +302,14 @@ impl args::CleanMode {
       "    {} path to be removed",
       Paint::new("DEL").fg(RED).bold()
     );
-    println!(
-      "    {} path to be kept",
-      Paint::new("OK ").fg(GREEN).bold()
-    );
+    println!("    {} path to be kept", Paint::new("OK ").fg(GREEN).bold());
 
     if !gcroots_tagged.is_empty() {
       println!();
       println!(
         "{} {}",
         Paint::new(ICON_ARROW).fg(PURPLE).bold(),
-        Paint::new("gcroots (matching the following regex patterns)")
-          .bold()
+        Paint::new("gcroots (matching the following regex patterns)").bold()
       );
       for re in regexes {
         println!(
@@ -405,7 +401,7 @@ impl args::CleanMode {
           }
         }
       }
-      
+
       println!(
         "\n{} {}",
         Paint::new(ICON_SUCCESS).fg(GREEN).bold(),

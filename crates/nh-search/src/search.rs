@@ -7,11 +7,7 @@ use color_eyre::{
   eyre::{Context, bail},
 };
 use elasticsearch_dsl::{
-  Operator,
-  Query,
-  Search,
-  SearchResponse,
-  TextQueryType,
+  Operator, Query, Search, SearchResponse, TextQueryType,
 };
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -32,23 +28,23 @@ static SUPPORTED_BRANCH_REGEX: OnceLock<Regex> = OnceLock::new();
 #[allow(non_snake_case, dead_code, clippy::struct_field_names)]
 struct SearchResult {
   // r#type: String,
-  package_attr_name:       String,
-  package_attr_set:        String,
-  package_pname:           String,
-  package_pversion:        String,
-  package_platforms:       Vec<String>,
-  package_outputs:         Vec<String>,
-  package_default_output:  Option<String>,
-  package_programs:        Vec<String>,
+  package_attr_name: String,
+  package_attr_set: String,
+  package_pname: String,
+  package_pversion: String,
+  package_platforms: Vec<String>,
+  package_outputs: Vec<String>,
+  package_default_output: Option<String>,
+  package_programs: Vec<String>,
   // package_license: Vec<License>,
-  package_license_set:     Vec<String>,
+  package_license_set: Vec<String>,
   // package_maintainers: Vec<HashMap<String, String>>,
-  package_description:     Option<String>,
+  package_description: Option<String>,
   package_longDescription: Option<String>,
-  package_hydra:           (),
-  package_system:          String,
-  package_homepage:        Vec<String>,
-  package_position:        Option<String>,
+  package_hydra: (),
+  package_system: String,
+  package_homepage: Vec<String>,
+  package_position: Option<String>,
 }
 
 // Cache the hyperlink support check result
@@ -72,10 +68,10 @@ fn print_hyperlink(text: &str, link: &str) {
 
 #[derive(Debug, Serialize)]
 struct JSONOutput {
-  query:      String,
-  channel:    String,
+  query: String,
+  channel: String,
   elapsed_ms: u128,
-  results:    Vec<SearchResult>,
+  results: Vec<SearchResult>,
 }
 
 impl args::SearchArgs {

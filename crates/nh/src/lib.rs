@@ -56,15 +56,13 @@ pub fn main() -> Result<()> {
     args
       .elevation_strategy
       .as_ref()
-      .map_or(ElevationStrategy::Auto, |arg| {
-        match arg {
-          ElevationStrategyArg::Auto => ElevationStrategy::Auto,
-          ElevationStrategyArg::None => ElevationStrategy::None,
-          ElevationStrategyArg::Passwordless => ElevationStrategy::Passwordless,
-          ElevationStrategyArg::Program(path) => {
-            ElevationStrategy::Prefer(path.clone())
-          },
-        }
+      .map_or(ElevationStrategy::Auto, |arg| match arg {
+        ElevationStrategyArg::Auto => ElevationStrategy::Auto,
+        ElevationStrategyArg::None => ElevationStrategy::None,
+        ElevationStrategyArg::Passwordless => ElevationStrategy::Passwordless,
+        ElevationStrategyArg::Program(path) => {
+          ElevationStrategy::Prefer(path.clone())
+        },
       });
 
   args.command.run(elevation)

@@ -4,10 +4,7 @@ use clap::{Args, Subcommand};
 use nh_core::{
   args::CommonRebuildArgs,
   checks::{
-    DarwinReplFeatures,
-    FeatureRequirements,
-    FlakeFeatures,
-    LegacyFeatures,
+    DarwinReplFeatures, FeatureRequirements, FlakeFeatures, LegacyFeatures,
   },
   installable::Installable,
   update::UpdateArgs,

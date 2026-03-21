@@ -4,10 +4,7 @@ use clap::{Args, Subcommand};
 use nh_core::{
   args::CommonRebuildArgs,
   checks::{
-    FeatureRequirements,
-    FlakeFeatures,
-    HomeReplFeatures,
-    LegacyFeatures,
+    FeatureRequirements, FlakeFeatures, HomeReplFeatures, LegacyFeatures,
   },
   installable::Installable,
 };

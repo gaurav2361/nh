@@ -33,7 +33,12 @@ pub struct DarwinCleanArgs {
   pub ask: bool,
 
   /// Categories to clean (comma-separated: system,user,dev,apps,browsers,optimize,purge,nix). Default: all
-  #[arg(long, short, value_delimiter = ',', default_value = "system,user,dev,apps,browsers,optimize,purge,nix")]
+  #[arg(
+    long,
+    short,
+    value_delimiter = ',',
+    default_value = "system,user,dev,apps,browsers,optimize,purge,nix"
+  )]
   pub categories: Vec<String>,
 
   #[arg(long, short, default_value = "1")]
@@ -43,8 +48,7 @@ pub struct DarwinCleanArgs {
   #[arg(long, short = 'K', default_value = "0h")]
   /// At least keep gcroots and generations in this time range since now (for Nix cleanup)
   pub keep_since: humantime::Duration,
-  }
-
+}
 
 #[derive(Args, Clone, Debug)]
 pub struct CleanArgs {
