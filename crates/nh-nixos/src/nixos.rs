@@ -377,10 +377,17 @@ impl OsRebuildActivateArgs {
         )
         .wrap_err("Bootloader activation failed")?;
       } else {
+        // Use the base system closure instead of the specialisation one.
+        // This is what makes all specialisations visible in the bootloader
+        // instead of only the generation with the specialisation.
+        let base_store_path = out_path
+          .canonicalize()
+          .context("Failed to resolve base output path to store path")?;
+
         Command::new("nix")
           .elevate(elevate.then_some(elevation.clone()))
           .args(["build", "--no-link", "--profile", SYSTEM_PROFILE])
-          .arg(canonical_out_path)
+          .arg(&base_store_path)
           .with_required_env()
           .run()
           .wrap_err("Failed to set system profile")?;
@@ -1193,12 +1200,12 @@ fn list_generations() -> Result<Vec<generations::GenerationInfo>> {
     };
 
     let path = entry.path();
-    if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-      if name.starts_with("system-") && name.ends_with("-link") {
-        if let Some(gen_info) = generations::describe(&path) {
-          generations.push(gen_info);
-        }
-      }
+    if let Some(name) = path.file_name().and_then(|s| s.to_str())
+      && name.starts_with("system-")
+      && name.ends_with("-link")
+      && let Some(gen_info) = generations::describe(&path)
+    {
+      generations.push(gen_info);
     }
   }
 
@@ -1295,11 +1302,10 @@ impl OsReplArgs {
     if let Installable::Flake {
       ref mut attribute, ..
     } = target_installable
+      && attribute.is_empty()
     {
-      if attribute.is_empty() {
-        attribute.push(String::from("nixosConfigurations"));
-        attribute.push(hostname);
-      }
+      attribute.push(String::from("nixosConfigurations"));
+      attribute.push(hostname);
     }
 
     Command::new("nix")
