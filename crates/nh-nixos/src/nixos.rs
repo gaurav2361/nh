@@ -346,6 +346,7 @@ impl OsRebuildActivateArgs {
           .preserve_envs(["NIXOS_INSTALL_BOOTLOADER"])
           .with_required_env()
           .show_output(self.show_activation_logs)
+          .pretty(self.show_activation_logs)
           .run()
           .wrap_err("Activation (test) failed")?;
       }

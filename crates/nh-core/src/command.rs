@@ -14,7 +14,7 @@ use color_eyre::{
 use secrecy::{ExposeSecret, SecretString};
 use subprocess::{Exec, ExitStatus, Redirection};
 use thiserror::Error;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 use which::which;
 
 use crate::{args::NixBuildPassthroughArgs, installable::Installable};
@@ -270,6 +270,7 @@ pub struct Command {
   elevate: Option<ElevationStrategy>,
   ssh: Option<String>,
   show_output: bool,
+  pretty: bool,
   env_vars: HashMap<String, EnvAction>,
 }
 
@@ -283,6 +284,7 @@ impl Command {
       elevate: None,
       ssh: None,
       show_output: false,
+      pretty: false,
       env_vars: HashMap::new(),
     }
   }
@@ -305,6 +307,13 @@ impl Command {
   #[must_use]
   pub const fn show_output(mut self, show_output: bool) -> Self {
     self.show_output = show_output;
+    self
+  }
+
+  /// Set whether to use pretty-printing for output.
+  #[must_use]
+  pub const fn pretty(mut self, pretty: bool) -> Self {
+    self.pretty = pretty;
     self
   }
 
@@ -700,21 +709,23 @@ impl Command {
     };
 
     // Configure output redirection based on show_output setting
-    let cmd = ssh_wrap(
-      if self.show_output {
-        cmd.stderr(Redirection::Merge)
-      } else {
-        cmd.stderr(Redirection::None).stdout(Redirection::None)
-      },
-      self.ssh.as_deref(),
-      sudo_password.as_ref(),
-    );
+    let cmd = if self.show_output && self.pretty {
+      cmd.stderr(Redirection::Merge).stdout(Redirection::Pipe)
+    } else {
+      ssh_wrap(
+        if self.show_output {
+          cmd.stderr(Redirection::Merge)
+        } else {
+          cmd.stderr(Redirection::None).stdout(Redirection::None)
+        },
+        self.ssh.as_deref(),
+        sudo_password.as_ref(),
+      )
+    };
 
     if let Some(m) = &self.message {
       info!("{m}");
     }
-
-    // debug!(?cmd);
 
     if self.dry {
       return Ok(());
@@ -724,26 +735,42 @@ impl Command {
       .message
       .clone()
       .unwrap_or_else(|| "Command failed".to_string());
-    let res = cmd.capture();
-    match res {
-      Ok(capture) => {
-        let status = &capture.exit_status;
-        if !status.success() {
-          let stderr = capture.stderr_str();
-          if stderr.trim().is_empty() {
+
+    if self.show_output && self.pretty {
+      return crate::format::run_pretty(cmd).wrap_err(msg);
+    }
+
+    if self.show_output {
+      let exit_status = cmd.join().wrap_err(msg.clone())?;
+      if !exit_status.success() {
+        return Err(eyre::eyre!(format!(
+          "{} (exit status {:?})",
+          msg, exit_status
+        )));
+      }
+      Ok(())
+    } else {
+      let res = cmd.capture();
+      match res {
+        Ok(capture) => {
+          let status = &capture.exit_status;
+          if !status.success() {
+            let stderr = capture.stderr_str();
+            if stderr.trim().is_empty() {
+              return Err(eyre::eyre!(format!(
+                "{} (exit status {:?})",
+                msg, status
+              )));
+            }
             return Err(eyre::eyre!(format!(
-              "{} (exit status {:?})",
-              msg, status
+              "{} (exit status {:?})\nstderr:\n{}",
+              msg, status, stderr
             )));
           }
-          return Err(eyre::eyre!(format!(
-            "{} (exit status {:?})\nstderr:\n{}",
-            msg, status, stderr
-          )));
-        }
-        Ok(())
-      },
-      Err(e) => Err(e).wrap_err(msg),
+          Ok(())
+        },
+        Err(e) => Err(e).wrap_err(msg),
+      }
     }
   }
 

@@ -13,7 +13,7 @@ use color_eyre::{
   owo_colors::OwoColorize,
 };
 use regex::Regex;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use crate::command::{Command, ElevationStrategy};
 
