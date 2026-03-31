@@ -14,11 +14,11 @@ pub enum LogLine {
 
 pub fn process_line(line: &str) -> LogLine {
   let line = line.trim();
-  if line.starts_with("Using ") {
-    return LogLine::HomebrewUsing(line[6..].to_string());
+  if let Some(dep) = line.strip_prefix("Using ") {
+    return LogLine::HomebrewUsing(dep.to_string());
   }
-  if line.starts_with("Installing ") {
-    return LogLine::HomebrewUsing(line[11..].to_string());
+  if let Some(dep) = line.strip_prefix("Installing ") {
+    return LogLine::HomebrewUsing(dep.to_string());
   }
   if let Some(caps) = line.strip_prefix("`brew bundle` complete! ") {
     if let Some(count_str) = caps.split_whitespace().next() {
@@ -30,11 +30,11 @@ pub fn process_line(line: &str) -> LogLine {
   if let Some(module) = line.strip_prefix("Activating ") {
     return LogLine::HomeManagerActivating(module.to_string());
   }
-  if line.starts_with("✓ ") {
-    return LogLine::DarwinSuccess(line[2..].to_string());
+  if let Some(msg) = line.strip_prefix("✓ ") {
+    return LogLine::DarwinSuccess(msg.to_string());
   }
-  if line.starts_with("ℹ️ ") {
-    return LogLine::DarwinInfo(line[4..].to_string());
+  if let Some(info) = line.strip_prefix("ℹ️ ") {
+    return LogLine::DarwinInfo(info.to_string());
   }
   if line.contains("━━━") || line.contains("━━━━") {
     let content = line.trim_matches('━').trim();
