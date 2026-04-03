@@ -3,6 +3,7 @@ use std::str::FromStr;
 use color_eyre::Result;
 use nh_core::command::{ElevationStrategy, ElevationStrategyArg};
 
+pub mod flake;
 pub mod interface;
 pub mod logging;
 

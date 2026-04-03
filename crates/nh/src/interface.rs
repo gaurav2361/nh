@@ -68,6 +68,7 @@ pub enum NHCommand {
   Darwin(nh_darwin::args::DarwinArgs),
   Search(nh_search::args::SearchArgs),
   Clean(nh_clean::args::CleanProxy),
+  Flake(crate::flake::FlakeArgs),
 }
 
 impl NHCommand {
@@ -78,6 +79,7 @@ impl NHCommand {
       Self::Home(args) => args.get_feature_requirements(),
       Self::Darwin(args) => args.get_feature_requirements(),
       Self::Search(..) | Self::Clean(..) => Box::new(NoFeatures),
+      Self::Flake(args) => args.get_feature_requirements(),
     }
   }
 
@@ -92,6 +94,7 @@ impl NHCommand {
       Self::Clean(proxy) => proxy.command.run(elevation),
       Self::Home(args) => args.run(),
       Self::Darwin(args) => args.run(elevation),
+      Self::Flake(args) => args.run(),
     }
   }
 }
