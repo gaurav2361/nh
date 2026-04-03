@@ -12,6 +12,7 @@ pub enum LogLine {
   DarwinInfo(String),
   DarwinSuccess(String),
   SectionHeader(String),
+  FlakeInputUpdating(String),
   Warning(String),
   Other(String),
 }
@@ -40,6 +41,10 @@ pub fn process_line(line: &str) -> LogLine {
         return LogLine::HomebrewComplete(count);
       }
     }
+  }
+  if let Some(input) = line.strip_prefix("updating input '") {
+    let input = input.trim_end_matches('\'');
+    return LogLine::FlakeInputUpdating(input.to_string());
   }
   if let Some(module) = line.strip_prefix("Activating ") {
     return LogLine::HomeManagerActivating(module.to_string());
@@ -76,6 +81,7 @@ pub struct ActivationState {
   brew_missing: usize,
   hm_count: usize,
   darwin_success: usize,
+  flake_updates: usize,
   last_info: Option<String>,
 }
 
@@ -88,6 +94,7 @@ impl Default for ActivationState {
       brew_missing: 0,
       hm_count: 0,
       darwin_success: 0,
+      flake_updates: 0,
       last_info: None,
     }
   }
@@ -154,6 +161,16 @@ pub fn run_pretty(exec: Exec) -> color_eyre::Result<()> {
           "\r\x1b[2K  {} Home-Manager: {} modules activated",
           Paint::new(ICON_INFO).fg(BLUE),
           state.hm_count
+        );
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
+      },
+      LogLine::FlakeInputUpdating(_) => {
+        state.flake_updates += 1;
+        print!(
+          "\r\x1b[2K  {} Flake: {} inputs updated",
+          Paint::new(ICON_INFO).fg(BLUE),
+          state.flake_updates
         );
         use std::io::Write;
         let _ = std::io::stdout().flush();
@@ -234,6 +251,25 @@ pub fn run_pretty(exec: Exec) -> color_eyre::Result<()> {
       "  {} Darwin: {} system settings applied",
       Paint::new(ICON_ARROW).fg(PURPLE),
       state.darwin_success
+    );
+  }
+  if state.flake_updates > 0 {
+    println!(
+      "  {} Flake: {} inputs updated",
+      Paint::new(ICON_ARROW).fg(PURPLE),
+      state.flake_updates
+    );
+  }
+
+  if state.brew_installing == 0
+    && state.brew_upgrading == 0
+    && state.hm_count == 0
+    && state.darwin_success == 0
+    && state.flake_updates == 0
+  {
+    println!(
+      "  {} Configuration is already up to date",
+      Paint::new(ICON_SUCCESS).fg(GREEN)
     );
   }
 

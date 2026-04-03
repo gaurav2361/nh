@@ -38,22 +38,37 @@ impl FlakeArgs {
         let flake_path = if let Some(i) = installable {
           i
         } else if let Ok(flake) = env::var("NH_FLAKE") {
-          // just extract the path, ignore attribute e.g. path#attr -> path
           let mut elems = flake.splitn(2, '#');
           elems.next().unwrap_or(".").to_string()
         } else {
           ".".to_string()
         };
 
-        let mut cmd = Command::new("nix").arg("flake").arg("update").arg("--flake").arg(&flake_path);
+        // Validate that the flake library exists
+        let path = std::path::Path::new(&flake_path);
+        if !path.exists() || !path.join("flake.nix").exists() {
+           let msg = if env::var("NH_FLAKE").is_err() && flake_path == "." {
+               "No flake found in current directory and NH_FLAKE is not set.\n\
+                Please set NH_FLAKE to your dotfiles directory or run within a flake directory."
+           } else {
+               &format!("Flake not found at: {}\nEnsure this directory contains a flake.nix file.", flake_path)
+           };
+           color_eyre::eyre::bail!("{}", msg);
+        }
+
+        let mut cmd = Command::new("nix")
+          .arg("flake")
+          .arg("update")
+          .arg("--flake")
+          .arg(&flake_path);
 
         if let Some(inp) = input {
           cmd = cmd.arg(inp);
         }
 
-        cmd.show_output(true).run()?;
+        cmd.show_output(true).pretty(true).run()?;
         Ok(())
-      }
+      },
     }
   }
 }
