@@ -18,7 +18,7 @@ pub enum CleanMode {
   User(CleanArgs),
   /// Clean a specific profile
   Profile(CleanProfileArgs),
-  /// macOS deep cleaning (experimental, ported from Mole)
+  /// macOS deep cleaning (experimental)
   Darwin(DarwinCleanArgs),
 }
 

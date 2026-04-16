@@ -49,7 +49,8 @@ pub fn process_line(line: &str) -> LogLine {
   if let Some(module) = line.strip_prefix("Activating ") {
     return LogLine::HomeManagerActivating(module.to_string());
   }
-  if let Some(msg) = line.strip_prefix("✓ ").or_else(|| line.strip_prefix("✔ ")) {
+  if let Some(msg) = line.strip_prefix("✓ ").or_else(|| line.strip_prefix("✔ "))
+  {
     if msg.contains("Error:") || msg.contains("failed") {
       return LogLine::Warning(msg.to_string());
     }
@@ -117,7 +118,10 @@ fn print_brew_status(state: &ActivationState) {
 
 pub fn run_pretty(exec: Exec) -> color_eyre::Result<()> {
   let mut popen = exec.start()?;
-  let stdout = popen.stdout.take().ok_or_else(|| color_eyre::eyre::eyre!("Failed to capture stdout"))?;
+  let stdout = popen
+    .stdout
+    .take()
+    .ok_or_else(|| color_eyre::eyre::eyre!("Failed to capture stdout"))?;
   let reader = BufReader::new(stdout);
   let mut state = ActivationState::default();
 
@@ -186,7 +190,11 @@ pub fn run_pretty(exec: Exec) -> color_eyre::Result<()> {
         println!("\r\x1b[2K  {} {}", Paint::new(ICON_SUCCESS).fg(GREEN), msg);
       },
       LogLine::SectionHeader(section) => {
-        println!("\n{} {}", Paint::new(ICON_ARROW).fg(PURPLE).bold(), section.trim());
+        println!(
+          "\n{} {}",
+          Paint::new(ICON_ARROW).fg(PURPLE).bold(),
+          section.trim()
+        );
       },
       LogLine::Warning(warn) => {
         if warn.contains("not installed") {

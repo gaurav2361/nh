@@ -42,6 +42,7 @@ static TARGET_DIRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
   s.insert("target");
   s.insert("build");
   s.insert("dist");
+  s.insert("dist-ssr");
   s.insert("venv");
   s.insert(".venv");
   s.insert("__pycache__");
